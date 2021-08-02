@@ -1,0 +1,66 @@
+---
+title: "PM579-final-project-multiple-testing"
+author: "Camellia Rui"
+date: "7/30/2021"
+output: html_document
+---
+## Install packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("readxl")
+if(!require("genefilter")) {BiocManager::install("genefilter")}
+library(readxl)
+library(tidyverse)
+library(genefilter)
+library(limma)
+
+```
+
+## Read in data
+```{r ReadData}
+csfdata <- read_excel('data/csf_reform.xlsx')
+plasmadata <- read_excel('data/plasma_reform.xlsx')
+head(csfdata)
+```
+csf is all the measurements within cerebrospinal fluid, plasma is all the measurements within plasma. 
+
+# Check missing data
+```{r missing}
+is.na(csfdata)
+
+```
+# Calculate descriptive statistics
+```{r descriptive}
+
+
+```
+# Multiple testing for before/after treatment
+for csf group: H0: the mean difference of fatty acids measured in csf is the same from the same patient before and after the treatment
+H1: the mean difference of fatty acids measured in csf is the different from the same pateint before and after the treatment
+
+for plasma group: the mean difference of fatty acids measured in plasma is the same from the same patient before and after the treatment
+H1: the mean difference of fatty acids measured in plasma is the different from the same pateint before and after the treatment
+
+```{r multiple testing for csf data}
+library(genefilter)
+group = factor(rep(c("A","B"), c(126,126)))
+res = rowttests(as.matrix(csfdata),factor(group))
+res$adjP = p.adjust(res$p.value, "BH")
+head(res)
+               
+```
+```{r histogram}
+hist(res$p.value)
+```
+```{r multiple testing for plasma data}
+library(genefilter)
+group = factor(rep(c("A","B"), c(126,126)))
+res = rowttests(as.matrix(plasmadata),factor(group))
+res$adjP = p.adjust(res$p.value, "BH")
+head(res)
+               
+```
+
+```{r histogram for plasma data}
+hist(res$p.value)
+```
