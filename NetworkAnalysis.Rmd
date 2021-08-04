@@ -1,0 +1,189 @@
+---
+title: "NetworkPlots"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library("readxl")
+library("qgraph")
+library("striprtf")
+library("readr")
+library("tidyverse")
+
+# loading lipids data
+
+datadir <- c("/Users/haotianxian/Documents/PM579-High Dimensional/Network Project/data/")
+    
+df_ce_csf = read_excel(file.path(datadir, "CSF_change.xlsx"), sheet = "CE")
+df_cer_csf = read_excel(file.path(datadir, "CSF_change.xlsx"), sheet = "Cer")
+df_dg_csf = read_excel(file.path(datadir, "CSF_change.xlsx"), sheet = "DG")
+df_hexcer_csf = read_excel(file.path(datadir, "CSF_change.xlsx"), sheet = "HexCer")
+df_pc_csf = read_excel(file.path(datadir, "CSF_change.xlsx"), sheet = "PC")
+df_sm_csf = read_excel(file.path(datadir, "CSF_change.xlsx"), sheet = "SM")
+df_tg_csf = read_excel(file.path(datadir, "CSF_change.xlsx"), sheet = "TG")
+df_csf = cbind(df_ce_csf,df_cer_csf,df_dg_csf,df_hexcer_csf,df_pc_csf,df_sm_csf,df_tg_csf)
+
+df_ce_pla = read_excel(file.path(datadir, "Plasma_change.xlsx"), sheet = "CE")
+df_cer_pla = read_excel(file.path(datadir, "Plasma_change.xlsx"), sheet = "Cer")
+df_dg_pla = read_excel(file.path(datadir, "Plasma_change.xlsx"), sheet = "DG")
+df_hexcer_pla = read_excel(file.path(datadir, "Plasma_change.xlsx"), sheet = "HexCer")
+df_pc_pla = read_excel(file.path(datadir, "Plasma_change.xlsx"), sheet = "PC")
+df_sm_pla = read_excel(file.path(datadir, "Plasma_change.xlsx"), sheet = "SM")
+df_tg_pla = read_excel(file.path(datadir, "Plasma_change.xlsx"), sheet = "TG")
+df_pla = cbind(df_ce_pla,df_cer_pla,df_dg_pla,df_hexcer_pla,df_pc_pla,df_sm_pla,df_tg_pla)
+
+#check if variable names match
+colnames(df_csf)==colnames(df_pla)
+
+# exclude missing rows
+df_csf = df_csf[-c(4,12,22,23),]
+df_pla = df_pla[-c(4,12,22,23),]
+
+# select CSF and plasma lipids which are significantly affected by treatment effect (using excel Laila_lm)
+result_lm_csf = read_excel(file.path(datadir, "Laila_lm.xlsx"), sheet = "treatment in CSF")
+csf_name = result_lm_csf$lipidname
+df_csf_sig = subset(df_csf, select=csf_name)
+
+result_lm_pla = read_excel(file.path(datadir, "Laila_lm.xlsx"), sheet = "treatment in plasma")
+pla_name = result_lm_pla$lipidname
+df_pla_sig = subset(df_pla, select = pla_name)
+
+# add _csf/_pla to column names
+colnames(df_csf_sig) = paste0(colnames(df_csf_sig), '_csf')
+colnames(df_pla_sig) = paste0(colnames(df_pla_sig), '_pla')
+
+# combine csf and plasma
+df_all = cbind(df_csf_sig,df_pla_sig)
+```
+
+```{r}
+# defining objects for use in qgraph function
+
+Groups <- c(rep("CSF CE",6),rep("CSF Cer",1),rep("CSF DG",2),rep("CSF PC",8),rep("CSF TG",3),
+            rep("PLA CE",3),rep("PLA Cer",2),rep("PLA DG",2),rep("PLA PC",17),rep("PLA PCO",1),
+            rep("PLA SM",9),rep("PLA TG",9))
+
+Groups_CSF_PLA <- c(rep("CSF",20),rep("PLA", 43))
+
+Shapes <- c(rep("square", 6), rep("circle", 1), rep("circle",2), rep("diamond", 8),
+                 rep("triangle",3),
+            rep("square",3),rep("circle",2),rep("circle",2),rep("diamond",17),rep("diamond",1),
+            rep("circle",9),rep("triangle",9))
+
+Names = read_excel(file.path(datadir, "Names.xlsx"))
+Names = deframe(Names)
+```
+
+```{r}
+# calculate correlation matrix
+corMat = cor(df_all)
+View(round(corMat,2))
+dim(corMat)
+```
+
+```{r}
+# check output directory where graphs will be
+getwd()
+
+# graph with all data
+pdf(file="plot_all.pdf", width = 150, height = 80)
+
+plot_all = qgraph(corMat, graph = "cor", layout = "spring",
+labels = Names, groups = Groups_CSF_PLA, vsize = 2,
+maximum = 1, esize = 3, threshold = 0.6, legend.cex = 7,
+theme = "classic", title = "Correlation Network filtering by |r|>0.6",
+title.cex = 15, borders = FALSE, label.cex = 1, shape = Shapes)
+
+dev.off()
+```
+
+```{r}
+# TG
+
+Groups_TG = c(rep("CSF TG",3),rep("PLA TG",9))
+keep_TG = c("TG.46.0._csf", "TG.56.7._csf", "TG.56.8._csf",
+"TG.46.1._pla", "TG.48.2._pla", "TG.50.2._pla",
+"TG.50.3._pla", "TG.50.4._pla", "TG.52.5._pla",      
+"TG.56.5._pla", "TG.56.7._pla", "TG.56.8._pla")
+Names_TG = c("TG 46:0", "TG 56:7", "TG 56:8",
+"TG 46:1", "TG 48:2", "TG 50:2","TG 50:3",
+"TG 50:4", "TG 52:5", "TG 56:5", "TG 56:7",
+"TG 56:8")
+
+corMat_TG = corMat[rownames(corMat) %in% keep_TG, 
+colnames(corMat) %in% keep_TG]
+dim(pcorMat_TG)
+
+pdf(file="plot_TG.pdf", width = 150, height = 80)
+
+qgraph(corMat_TG, graph = "cor", layout = "spring", labels = Names_TG,
+groups = Groups_TG, vsize = 3, vTrans = 200, esize = 3,
+threshold = 0.2, legend.cex = 7, theme = "classic",
+title = "Correlation Network Plasma TG & CSF TG, filtering by |r|>0.2",
+title.cex = 15, borders = FALSE, label.cex = 1, edge.labels = FALSE,
+edge.label.cex = 0.3)
+
+dev.off()
+
+# PC
+Groups_PC = c(rep("CSF PC",8),rep("PLA PC",16),
+rep("PLA PCO",1), rep("PLA LPC.DHA"))
+keep_PC = c("PC.36.5_csf", "PC.36.6_csf", "PC.38.6_csf", "PC.40.4_csf",
+"PC.40.5_csf",  "PC.40.6_csf", "PC.40.7_csf", "PC.40.8_csf",
+"PC.32.1_pla", "PC.34.2_pla", "PC.34.3_pla", "PC.36.3_pla",
+"PC.36.4_pla", "PC.36.5_pla", "PC.36.6_pla", "PC.38.3_pla",
+"PC.38.4_pla", "PC.38.6_pla", "PC.38.7_pla", "PC.40.4_pla",
+"PC.40.5_pla", "PC.40.6_pla", "PC.40.7_pla", "PC.40.8_pla",
+"PC.42.5_pla", "PC.O.34.2.1_pla")
+
+Names_PC = c("PC 36:5", "PC 36:6", "PC 38:6", "PC 40:4", "PC 40:5",
+"PC 40:6", "PC 40:7", "PC 40:8", "PC 32:1",  
+"PC 34:2", "PC 34:3", "PC 36:3", "PC 36:4", "PC 36:5",
+"PC 36:6", "PC 38:3", "PC 38:4", "PC 38:6", "PC 38:7",
+"PC 40:4", "PC 40:5", "PC 40:6", "PC 40:7", 
+"PC 40:8", "PC 42:5", "PCO 34:2/1")
+
+corMat_PC = corMat[rownames(corMat) %in% keep_PC, 
+colnames(corMat) %in% keep_PC]
+
+pdf(file="plot_PC", width = 150, height = 80)
+
+qgraph(corMat_PC, graph = "cor", layout = "spring", labels = Names_PC,
+groups = Groups_PC, vsize = 3, vTrans = 200, esize = 3, threshold = 0.2,
+legend.cex = 4, theme = "classic",
+title = "Correlation Network Plasma PC & CSF PC, filtering by |r|>0.2",
+title.cex = 15, borders = FALSE, label.cex = 1, edge.labels = FALSE, 
+edge.label.cex = 0.3)
+
+dev.off()
+
+# CE
+Groups_CE = c(rep("CSF CE",6),rep("PLA CE",3))
+keep_CE = c("CE.18.3._csf", "CE.20.4._csf", "CE.20.5._csf",
+"CE.22.4._csf", "CE.22.5._csf", "CE.22.6._csf",
+"CE.20.5._pla", "CE.22.5._pla", "CE.22.6._pla")
+
+corMat_CE = corMat[rownames(corMat) %in% keep_CE, 
+colnames(corMat) %in% keep_CE]
+
+Names_CE = c("CE 18:3", "CE 20:4", "CE 20:5", "CE 22:4",
+"CE 22:5", "CE 22:6", "CE 20:5", "CE 22:5" ,
+"CE 22:6")
+
+pdf(file="plot_CE.pdf", width = 150, height = 80)
+
+qgraph(corMat_CE, graph = "cor", layout = "spring",
+labels = Names_CE, groups = Groups_CE, vsize = 5,
+vTrans = 200, esize = 3, threshold = 0.2, legend.cex = 6,
+theme = "classic",
+title = "Correlation Network Plasma CE & CSF CE, filtering by |r|>0.2",
+title.cex = 15, borders = FALSE, label.cex = 1,
+edge.labels = FALSE, edge.label.cex = 0.3)
+
+dev.off()
+```
+

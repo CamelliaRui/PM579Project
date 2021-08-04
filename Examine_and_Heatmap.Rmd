@@ -1,0 +1,97 @@
+---
+title: "PM579 Project"
+output: html_document
+Date: 08/02/2021
+Author: Camellia, Jiazheng, Haotian
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("readxl")
+library(readxl)
+```
+
+## Read in data
+```{r ReadData}
+csfdata <- read_excel('data/df_csf_sig.xlsx')
+plasmadata <- read_excel('data/df_pla_sig.xlsx')
+head(csfdata)
+```
+# Name of the data
+```{r structure}
+names(csfdata)
+names(plasmadata)
+```
+pla represents the measure was conducted in plasma, and csf represents the measure was conducted in csf.
+
+# Sample size of the data
+```{r dim}
+dim(csfdata)
+dim(plasmadata)
+```
+
+# Check missing data
+```{r missing}
+is.na(csfdata)
+is.na(plasmadata)
+```
+
+# Heatmap visualization
+```{r loadlibraries}
+library(bookdown)
+library(matrixStats)
+library(ggplot2)
+library(matlab)
+library(ComplexHeatmap)
+library(readxl)
+if(!require("ComplexHeatmap")){BiocManager::install("ComplexHeatmap")}
+if(!require("matlab")){BiocManager::install("matlab")}
+library(ComplexHeatmap)
+library(matlab)   # this library let's us use blue-red color spectrum for heatmap  (jet.colors)
+library(matrixStats)
+
+if(!require("dendextend")) install.packages("dendextend")
+library(dendextend)
+
+if(!require("ppcor")) install.packages("ppcor")
+library(ppcor)
+
+```
+
+```{r heatmap fig1}
+all <- read_excel("data/all.xlsx")
+
+CorMat = cor(all, use="pairwise.complete.obs")
+
+
+pdf(file="heatmap.pdf", width = 25, height = 25)
+
+Heatmap(CorMat)
+
+dev.off()
+```
+```{r heatmap fig2}
+
+CorMat2 = cor(plasmadata, use="pairwise.complete.obs")
+
+pdf(file="heatmap_pla.pdf", width = 25, height = 25)
+
+Heatmap(CorMat2)
+
+dev.off()
+
+```
+
+
+
+
+
+
+```{r heatmap fig3}
+CorMat1 = cor(csfdata, use="pairwise.complete.obs")
+pdf(file="heatmap_csf.pdf", width = 25, height = 25)
+Heatmap(CorMat1)
+dev.off()
+
+```
+
